@@ -1,0 +1,13 @@
+---
+# vars file for storage-role
+vdo_install: ['lvm2','kmod-kvdo','vdo']
+
+db_dir_path: "/database-data"
+db_vg_name: "database-vg"
+db_lv_name: "database-vdo"
+db_lv_size: "10g"
+db_lv_vsize: "100g"
+db_fstype: "xfs"
+
+
+

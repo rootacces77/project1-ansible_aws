@@ -1,0 +1,8 @@
+[suricata]
+enabled = true
+filter = suricata
+action = iptables[name=Suricata, port=any, protocol=all]
+logpath = /var/log/suricata/eve.json
+bantime = -1
+findtime = 300
+maxretry = 3

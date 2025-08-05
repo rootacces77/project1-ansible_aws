@@ -1,0 +1,61 @@
+- name: Install nginx
+  ansible.builtin.package:
+    name:
+      - nginx
+      - python3-cryptography
+    state: present
+
+- name: Create cert DIR
+  ansible.builtin.file:
+    path: /certs
+    state: directory
+    owner: root 
+    group: root
+    mode: '0755'
+
+- name: Generate private key
+  community.crypto.openssl_privatekey:
+    path: /certs/bastion.key
+    type: RSA
+    size: 4096
+    state: present
+    mode: '0600'
+
+- name: Generate CSR with CN
+  community.crypto.openssl_csr:
+    path: /certs/bastion.csr
+    privatekey_path: /certs/bastion.key
+    common_name: "{{bastion_public_ip}}"
+
+- name: Generate cert
+  community.crypto.x509_certificate:
+    path: /certs/bastion.crt
+    privatekey_path: /certs/bastion.key
+    csr_path: /certs/bastion.csr
+    provider: selfsigned
+    selfsigned_not_after: "+365d"
+    mode: '0644'
+
+- name: Create config file
+  ansible.builtin.template:
+    src: bastion-rproxy.conf.j2
+    dest: /etc/nginx/conf.d/nginx.conf
+    mode: '0644'
+    owner: root
+    group: root
+  notify:
+    - Restart Nginx
+
+- name: Remove default site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+    
+
+- name: Start and Enable Nginx
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true
+
+

@@ -1,0 +1,7 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for suricata-role
+
+- name: Task1
+  ansible.builtin.include_tasks: setup_suricata.yaml
+  when: "'_bastion' in group_names"

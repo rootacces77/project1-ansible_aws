@@ -1,0 +1,10 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for suricata-role
+
+- name: Restart Suricata
+  ansible.builtin.service:
+    name: suricata
+    state: restarted
+    enabled: true
+    daemon_reload: true

@@ -1,0 +1,23 @@
+- name: Install AppArmor
+  ansible.builtin.apt:
+    name: "{{ app_install }}"
+    state: present
+    update_cache: true
+
+- name: Check profile
+  ansible.builtin.stat:
+    path: /etc/apparmor.d/usr.sbin.nginx
+  register: app_check
+
+- name: Generate AppArmor profile using aa-autodep
+  ansible.builtin.command: 'aa-autodep {{ item }}'
+  when: not app_check.stat.exists
+  loop: "{{ en_profiles }}"
+
+- name: Complain profiles
+  ansible.builtin.command: 'aa-complain /etc/apparmor.d/{{item}}'
+  when: not app_check.stat.exists
+  loop: "{{profiles}}"
+
+- name: Call logprof
+  ansible.builtin.import_tasks: aa-logprof.yaml

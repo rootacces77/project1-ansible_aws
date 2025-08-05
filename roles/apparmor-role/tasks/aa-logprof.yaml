@@ -1,0 +1,17 @@
+- name: Comment out original readkey() definition
+  ansible.builtin.replace:
+    path: /usr/lib/python3/dist-packages/apparmor/common.py
+    regexp: '^def readkey\(\):'
+    replace: '# def readkey():  # disabled by Ansible patch'
+
+- name: Patch readkey() to support stdin automation
+  ansible.builtin.blockinfile:
+    path: /usr/lib/python3/dist-packages/apparmor/common.py
+    marker: "# {mark} ANSIBLE MANAGED BLOCK readkey patch"
+    block: |
+      def readkey():
+          """Non-interactive version — read one character from stdin"""
+          try:
+              return sys.stdin.read(1)
+          except Exception:
+              return 's'  # default fallback to save

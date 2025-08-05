@@ -1,0 +1,3 @@
+passlib
+boto3
+botocore

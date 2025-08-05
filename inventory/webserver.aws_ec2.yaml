@@ -1,0 +1,11 @@
+---
+plugin: amazon.aws.aws_ec2
+regions:
+  - eu-north-1
+filters:
+  "tag:group": webserver
+compose:
+  ansible_host: private_ip_address
+keyed_groups:
+  - key: tags.group
+    prefix: ''

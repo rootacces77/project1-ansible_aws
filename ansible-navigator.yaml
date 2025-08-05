@@ -1,0 +1,20 @@
+ansible-navigator:
+  ansible:
+    config:
+      path: ./ansible.cfg 
+
+  execution-environment:
+    container-engine: docker
+    enabled: true
+    image: project1-env:2.0
+    pull:
+      policy: missing
+    container-options:
+      - "--volume"
+      - "/root/.aws:/runner/.aws:ro"
+    environment-variables:
+      set:
+        AWS_PROFILE: "session"
+
+  playbook-artifact:
+    enable: false

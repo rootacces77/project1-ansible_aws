@@ -1,0 +1,3 @@
+ansible_user: ec2-user
+ansible_ssh_common_args: >
+  -o ProxyJump="ubuntu@{{ hostvars[groups['_bastion'][0]]['public_ip_address'] }} -i aws-private.key"

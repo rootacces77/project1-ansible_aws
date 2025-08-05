@@ -1,0 +1,5 @@
+---
+# tasks file for storage-role
+- name: Task1
+  ansible.builtin.include_tasks: database-storage.yaml
+  when: "'_database' in group_names"

@@ -1,0 +1,18 @@
+#SPDX-License-Identifier: MIT-0
+---
+# vars file for apparmor-role
+
+app_install:
+  - apparmor
+  - apparmor-utils 
+  - apparmor-profiles 
+  - apparmor-profiles-extra
+
+profiles:
+  - usr.sbin.nginx
+  - usr.bin.suricata
+
+
+en_profiles:
+  - /usr/sbin/nginx
+  - /usr/bin/suricata

@@ -1,0 +1,52 @@
+- name: Install Required
+  ansible.builtin.dnf:
+    name: "{{vdo_install}}"
+    state: present
+
+- name: Enable kvdo mod
+  community.general.modprobe:
+    name: kvdo
+    persistent: present
+    state: present
+
+- name: Create Virtual Group
+  community.general.lvg:
+    vg: "{{db_vg_name}}"
+    pvs: "{{db_device_path}}"
+    state: present
+
+- name: Test Logical Volume
+  ansible.builtin.stat:
+    path: '/dev/{{db_vg_name}}/{{db_lv_name}}'
+  register: lvol_stat
+
+- name: Create Logical Volume
+  community.general.lvol:
+    lv: "{{db_lv_name}}"
+    vg: "{{db_vg_name}}"
+    opts: "--type vdo --virtualsize {{db_lv_vsize}}" 
+    size: "{{db_lv_size}}"
+    state: present
+  when: lvol_stat.stat.exists == false
+
+- name: Create Filesystem
+  ansible.builtin.filesystem:
+    dev: '/dev/{{db_vg_name}}/{{db_lv_name}}'
+    fstype: "{{db_fstype}}"
+    state: present
+
+- name: Create database-data dir
+  ansible.builtin.file:
+    state: directory
+    path: '/database-data'
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Mount Filesystem
+  ansible.builtin.mount:
+    src: '/dev/{{db_vg_name}}/{{db_lv_name}}'
+    path: "{{db_dir_path}}"
+    fstype: "{{db_fstype}}"
+    opts: "defaults,noatime,nosuid"
+    state: mounted

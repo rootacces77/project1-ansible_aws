@@ -1,0 +1,42 @@
+- name: Install fail2ban
+  ansible.builtin.package:
+    name: fail2ban
+    state: present
+
+- name: Generate sshd jail
+  ansible.builtin.template:
+    src: sshd.local.j2
+    dest: /etc/fail2ban/jail.d/sshd.local
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Restart fail2ban
+
+- name: Generate Suricata filter
+  ansible.builtin.template:
+    src: suricata.conf.j2
+    dest: /etc/fail2ban/filter.d/suricata.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Restart fail2ban
+
+- name: Generate Suricata jail
+  ansible.builtin.template:
+    src: suricata.local.j2
+    dest: /etc/fail2ban/jail.d/suricata.local
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Restart fail2ban
+
+- name: Start and enable fail2ban
+  ansible.builtin.service:
+    name: suricata
+    state: started
+    enabled: true
+    daemon_reload: true
+

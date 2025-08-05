@@ -1,0 +1,26 @@
+#Overall vars: 
+user_name: "ansible"
+user_password: "{{root | password_hash('sha512' ) }}"
+user_public_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBhuCNqtfB/3G6kC6CYLuP1+7xQSQXnJ8oFeeLoLR0sO proj>
+db_user: "ansible"
+db_password: "root"
+
+db_device_path: ""
+
+bastion_iface: ""
+
+database_ip: "{{ groups['_database'] | map('extract', hostvars, 'private_ip_address') | first }}"
+webserver_ip: "{{ groups['_webserver'] | map('extract', hostvars, 'private_ip_address') | first }}"
+bastion_ip: "{{ groups['_bastion'] | map('extract', hostvars, 'private_ip_address') | first }}"
+bastion_public_ip: "{{ groups['_bastion'] | map('extract', hostvars, 'ansible_host') | first }}"
+
+sshd_port: 2222
+https_port: 443
+http_port: 80
+mariadb_port: 3306
+httpd_port: 8080
+
+#Path needed for SeLinux and httpd ( dont change )
+httpd_data_path: "/web-data/sakila-demo"
+
+

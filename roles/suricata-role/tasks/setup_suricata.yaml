@@ -1,0 +1,24 @@
+- name: Install Suricata
+  ansible.builtin.package:
+    name: suricata
+    state: present
+
+- name: Update Suricata rules
+  ansible.builtin.command: 'suricata-update'
+
+- name: Generate config
+  ansible.builtin.copy:
+    src: suricata.yaml
+    dest: /etc/suricata/suricata.yaml
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Restart Suricata
+
+- name: Start and Enable Suricata
+  ansible.builtin.service:
+    name: suricata
+    state: started
+    enabled: true
+    daemon_reload: true
