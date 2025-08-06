@@ -1,0 +1,296 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: VPC with 3 subnets, 3 route tables, Internet Gateway, and NAT Gateway.
+
+Resources:
+
+  # VPC
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: ansible-VPC
+
+  # Internet Gateway
+  IG:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: ansible-IG
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref IG
+
+  # Elastic IP for NAT Gateway
+  NatEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  # Subnets
+  BastionSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: bastion-subnet
+
+  WebserverSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: webserver-subnet
+
+  DatabaseSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: !Select [2, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: database-subnet
+
+  # NAT Gateway in same subnet as Internet Gateway (Subnet1)
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEIP.AllocationId
+      SubnetId: !Ref BastionSubnet
+      Tags:
+        - Key: Name
+          Value: ansible-NAT
+
+  # Route Tables
+  BastionRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: Name
+          Value: bastion-RT
+
+  bastionTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref BastionSubnet
+      RouteTableId: !Ref BastionRT
+
+  WebserverRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: Name
+          Value: webserver-RT
+
+  webserverTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref WebserverSubnet 
+      RouteTableId: !Ref WebserverRT
+
+
+  DatabaseRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: Name
+          Value: database-RT
+
+  databaseTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref DatabaseSubnet 
+      RouteTableId: !Ref DatabaseRT
+
+# Route Tables Routes
+
+  BastionRTroute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref BastionRT
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref IG
+
+  WebserverRTroute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref WebserverRT
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+  DatabaseRTroute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref DatabaseRT
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+# Security Groups
+
+  BastionSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH, HTTP, and HTTPS from anywhere
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: Allow SSH
+        - IpProtocol: tcp
+          FromPort: 2222
+          ToPort: 2222
+          CidrIp: 0.0.0.0/0
+          Description: Allow SSH
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: Allow HTTP
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: Allow HTTPS
+      Tags:
+        - Key: Name
+          Value: bastion-SG
+
+  WebserverSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH and HTTPS from bastion-SG
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          SourceSecurityGroupId: !Ref BastionSG
+          Description: Allow SSH
+        - IpProtocol: tcp
+          FromPort: 2222
+          ToPort: 2222
+          SourceSecurityGroupId: !Ref BastionSG
+          Description: Allow SSH
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref BastionSG
+          Description: Allow HTTPS
+      Tags:
+        - Key: Name
+          Value: webserver-SG
+
+  DatabaseSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH from bastion-SG and mariadb from webserver
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          SourceSecurityGroupId: !Ref BastionSG
+          Description: Allow SSH
+        - IpProtocol: tcp
+          FromPort: 2222
+          ToPort: 2222
+          SourceSecurityGroupId: !Ref BastionSG
+          Description: Allow SSH
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref WebserverSG
+          Description: Allow Mariadb
+      Tags:
+        - Key: Name
+          Value: database-SG
+
+# EC2 Instances
+
+
+  BastionServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-042b4708b1d05f512  # <-- Replace with latest Ubuntu AMI ID for your region
+      InstanceType: t3.micro           # <-- Or your desired instance type
+      KeyName: ansible-key              # <-- Replace with your existing key pair name
+      SubnetId: !Ref BastionSubnet  # <-- Replace with your existing Subnet ID
+      SecurityGroupIds:
+        - !Ref BastionSG         # <-- Replace with your existing Security Group ID
+      Tags:
+        - Key: Name
+          Value: bastion-server
+        - Key: group
+          Value: bastion
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt update 
+          sudo apt upgrade -y
+      Monitoring: false # Optional: disables detailed monitoring (default)
+
+
+  WebServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-005019f47c98b4abd  # <-- Replace with latest Ubuntu AMI ID for your region
+      InstanceType: t3.micro           # <-- Or your desired instance type
+      KeyName: ansible-key              # <-- Replace with your existing key pair name
+      SubnetId: !Ref WebserverSubnet  # <-- Replace with your existing Subnet ID
+      SecurityGroupIds:
+        - !Ref WebserverSG         # <-- Replace with your existing Security Group ID
+      Tags:
+        - Key: Name
+          Value: web-server
+        - Key: group
+          Value: webserver
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          subscription-manager register --org=19158669 --activationkey=ansible-projects 
+          subscription-manager attach --auto
+          sudo dnf update
+      Monitoring: false # Optional: disables detailed monitoring (default)
+
+
+  DatabaseServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-005019f47c98b4abd  # <-- Replace with latest Ubuntu AMI ID for your region
+      InstanceType: t3.micro           # <-- Or your desired instance type
+      KeyName: ansible-key              # <-- Replace with your existing key pair name
+      SubnetId: !Ref DatabaseSubnet  # <-- Replace with your existing Subnet ID
+      SecurityGroupIds:
+        - !Ref DatabaseSG         # <-- Replace with your existing Security Group ID
+      Tags:
+        - Key: Name
+          Value: database-server
+        - Key: group
+          Value: database
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          subscription-manager register --org=19158669 --activationkey=ansible-projects 
+          subscription-manager attach --auto
+          sudo dnf update
+      Monitoring: false # Optional: disables detailed monitoring (default)
+
