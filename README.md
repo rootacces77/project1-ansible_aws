@@ -46,7 +46,9 @@ Suricata
 Youtube
 
 
-ClaudFormation code 
+README
+TASK [storage-role : Create Logical Volume] *********************************************************************************************
+fatal: [ip-10-0-3-201.eu-north-1.compute.internal]: FAILED! => {"changed": false, "err": "  Not enough free memory for VDO target. 449.00 MiB RAM is required, but only 378.00 MiB RAM is available.\n", "msg": "Creating logical volume 'database-vdo' failed", "rc": 5}
 
-bastion_interface
-database_storage_device
+
+ansible-ee

@@ -4,23 +4,93 @@
   become: true
   vars_files:
     - vars/main.yaml
-  roles:
-    - role: adduser-role
-    - role: general_settings-role
-    - role: sshd-role
-    - role: firewalld-role
-    - role: chrony-role
-    - role: storage-role
-    - role: httpd-role 
-    - role: nginx-role
-    - role: suricata-role
-    - role: fail2ban-role
-    - role: mariadb-role
-    - role: cron-role
-    - role: sysctl-role
-    - role: apparmor-role
-    - role: AIDE-role
   tasks:
+
+    - name: Get default interface name
+      set_fact:
+        bastion_iface: "{{ ansible_default_ipv4.interface }}"
+      when: "'_bastion' in group_names"
+
+    - name: Get storage device name
+      set_fact:
+        db_device_path: "/dev/{{ ansible_devices.keys() | select('match', '^(xvd|nvme|sd|vd)') | list | last }}"
+      when: "'_database' in group_names"
+
+    - name: adduser-role
+      ansible.builtin.include_role:
+        name: adduser-role
+        tasks_from: main.yml
+
+    - name: general_settings-role
+      ansible.builtin.include_role:
+        name: general_settings-role
+        tasks_from: main.yml
+
+#    - name: storage-role
+#      ansible.builtin.include_role:
+#        name: storage-role
+#        tasks_from: main.yml
+
+    - name: sshd-role
+      ansible.builtin.include_role:
+        name: sshd-role
+        tasks_from: main.yml
+
+    - name: firewall
+      ansible.builtin.include_role:
+        name: firewalld-role
+        tasks_from: main.yml
+
+    - name: chrony-role
+      ansible.builtin.include_role:
+        name: chrony-role
+        tasks_from: main.yml
+
+    - name: httpd-role
+      ansible.builtin.include_role:
+        name: httpd-role
+        tasks_from: main.yml
+
+    - name: nginx-role
+      ansible.builtin.include_role:
+        name: nginx-role
+        tasks_from: main.yml
+
+    - name: suricata-role
+      ansible.builtin.include_role:
+        name: suricata-role
+        tasks_from: main.yml
+
+    - name: fail2ban-role
+      ansible.builtin.include_role:
+        name: fail2ban-role
+        tasks_from: main.yml
+
+    - name: mariadb-role
+      ansible.builtin.include_role:
+        name: mariadb-role
+        tasks_from: main.yml
+
+    - name: cron-role
+      ansible.builtin.include_role:
+        name: cron-role
+        tasks_from: main.yml
+
+    - name: sysctl-role
+      ansible.builtin.include_role:
+        name: sysctl-role
+        tasks_from: main.yml
+
+    - name: apparmor-role
+      ansible.builtin.include_role:
+        name: apparmor-role
+        tasks_from: main.yml
+
+    - name: AIDE-role
+      ansible.builtin.include_role:
+        name: AIDE-role
+        tasks_from: main.yml
+
     - name: Sshd
       ansible.builtin.include_role:
         name: sshd-role

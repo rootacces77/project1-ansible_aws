@@ -7,7 +7,7 @@ db_password: "root"
 
 db_device_path: ""
 
-bastion_iface: ""
+#bastion_iface: ""
 
 database_ip: "{{ groups['_database'] | map('extract', hostvars, 'private_ip_address') | first }}"
 webserver_ip: "{{ groups['_webserver'] | map('extract', hostvars, 'private_ip_address') | first }}"

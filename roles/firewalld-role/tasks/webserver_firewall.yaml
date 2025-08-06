@@ -1,3 +1,14 @@
+- name: Install firewalld
+  ansible.builtin.dnf:
+    name: firewalld
+    state: present
+
+- name: Start and Enable firewalld
+  ansible.builtin.service:
+    name: firewalld
+    state: started
+    enabled: true
+
 - name: Create httpd Service
   ansible.builtin.template:
     src: httpd.xml.j2

@@ -1,15 +1,22 @@
+- name: Test file
+  ansible.builtin.stat:
+    path: /etc/crs
+  register: test_crs
+
 - name: Copy files
   ansible.builtin.copy:
     src: "crs.tar.gz"
     dest: "/etc/"
     owner: root
     group: root
+  when: test_crs.stat.exists == false
 
 - name: Unarchive crs
   ansible.builtin.unarchive:
     remote_src: true
     src: /etc/crs.tar.gz
     dest: /etc/
+  when: test_crs.stat.exists == false
 
 - name: Remove archive
   ansible.builtin.file:

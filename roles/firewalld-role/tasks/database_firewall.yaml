@@ -1,3 +1,14 @@
+- name: Install firewalld
+  ansible.builtin.dnf:
+    name: firewalld
+    state: present
+
+- name: Start and Enable firewalld
+  ansible.builtin.service: 
+    name: firewalld
+    state: started
+    enabled: true
+
 - name: Create mariadb Service
   ansible.builtin.template:
     src: mariadb.xml.j2

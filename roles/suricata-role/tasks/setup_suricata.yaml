@@ -4,7 +4,7 @@
     state: present
 
 - name: Update Suricata rules
-  ansible.builtin.command: 'suricata-update'
+  ansible.builtin.command: 'sudo suricata-update'
 
 - name: Generate config
   ansible.builtin.copy:

@@ -232,10 +232,13 @@ Resources:
     Properties:
       ImageId: ami-042b4708b1d05f512  # <-- Replace with latest Ubuntu AMI ID for your region
       InstanceType: t3.micro           # <-- Or your desired instance type
-      KeyName: ansible-key              # <-- Replace with your existing key pair name
-      SubnetId: !Ref BastionSubnet  # <-- Replace with your existing Subnet ID
-      SecurityGroupIds:
-        - !Ref BastionSG         # <-- Replace with your existing Security Group ID
+      KeyName: ansible-key
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId: !Ref BastionSubnet
+          GroupSet:
+            - !Ref BastionSG
       Tags:
         - Key: Name
           Value: bastion-server
@@ -266,9 +269,9 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          subscription-manager register --org=19158669 --activationkey=ansible-projects 
-          subscription-manager attach --auto
-          sudo dnf update
+          sudo subscription-manager register --org=19158669 --activationkey=ansible-projects 
+          sudo subscription-manager attach --auto
+          sudo dnf update -y
       Monitoring: false # Optional: disables detailed monitoring (default)
 
 
@@ -281,6 +284,12 @@ Resources:
       SubnetId: !Ref DatabaseSubnet  # <-- Replace with your existing Subnet ID
       SecurityGroupIds:
         - !Ref DatabaseSG         # <-- Replace with your existing Security Group ID
+      BlockDeviceMappings:
+        - DeviceName: /dev/sdb     
+          Ebs:
+            VolumeSize: 15           
+            VolumeType: gp3
+            DeleteOnTermination: true
       Tags:
         - Key: Name
           Value: database-server
@@ -289,8 +298,29 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          subscription-manager register --org=19158669 --activationkey=ansible-projects 
-          subscription-manager attach --auto
-          sudo dnf update
+          #sudo subscription-manager register --org=19158669 --activationkey=ansible-projects 
+          #sudo subscription-manager attach --auto
+          sudo dnf update -y
+          # Get current running kernel
+          current_kernel=$(uname -r)
+
+          # Get the latest installed kernel version (numerically sorted)
+          latest_kernel=$(sudo rpm -q kernel | sort -V | tail -n 1 | sed 's/kernel-//')
+
+          # If current kernel is already the latest, skip
+          if [[ "$current_kernel" == "$latest_kernel" ]]; then
+             exit 0
+          fi
+
+          # Build the vmlinuz path
+          kernel_path="/boot/vmlinuz-${latest_kernel}"
+
+          # Check if the kernel file exists
+          if [[ -f "$kernel_path" ]]; then
+             sudo grubby --set-default "$kernel_path"
+             sudo reboot
+          else
+             exit 1
+          fi
       Monitoring: false # Optional: disables detailed monitoring (default)
 
