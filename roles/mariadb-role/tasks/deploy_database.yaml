@@ -20,7 +20,7 @@
     login_user: root
     login_password: "{{ db_password }}"
     login_unix_socket: "{{ mariadb_socket }}"
-    filter: tables
+    filter: databases
     login_db: "{{ database_name }}"
   register: db_tables    
 

@@ -13,3 +13,6 @@
 - name: Setup bastion sysctl 
   ansible.builtin.include_tasks: bastion_server.yaml
   when: "'_bastion' in group_names"
+
+- name: Flush Handlers
+  ansible.builtin.meta: flush_handlers

@@ -1,3 +1,5 @@
+ansible
 passlib
 boto3
 botocore
+awscli

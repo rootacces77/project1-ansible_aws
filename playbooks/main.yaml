@@ -16,6 +16,8 @@
         db_device_path: "/dev/{{ ansible_devices.keys() | select('match', '^(xvd|nvme|sd|vd)') | list | last }}"
       when: "'_database' in group_names"
 
+
+
     - name: adduser-role
       ansible.builtin.include_role:
         name: adduser-role
@@ -90,6 +92,8 @@
       ansible.builtin.include_role:
         name: AIDE-role
         tasks_from: main.yml
+
+
 
     - name: Sshd
       ansible.builtin.include_role:

@@ -5,8 +5,8 @@ images:
     name: "registry.redhat.io/ansible-automation-platform-25/ee-minimal-rhel9:latest"
 
 dependencies:
-  python: python-req.txt
   system: system-req.txt
+  python: python-req.txt
   galaxy: galaxy-req.yaml
 
 

@@ -258,9 +258,9 @@ Resources:
       ImageId: ami-005019f47c98b4abd  # <-- Replace with latest Ubuntu AMI ID for your region
       InstanceType: t3.micro           # <-- Or your desired instance type
       KeyName: ansible-key              # <-- Replace with your existing key pair name
-      SubnetId: !Ref WebserverSubnet  # <-- Replace with your existing Subnet ID
+      SubnetId: !Ref WebserverSubnet  
       SecurityGroupIds:
-        - !Ref WebserverSG         # <-- Replace with your existing Security Group ID
+        - !Ref WebserverSG        
       Tags:
         - Key: Name
           Value: web-server
@@ -313,11 +313,11 @@ Resources:
           fi
 
           # Build the vmlinuz path
-          kernel_path="/boot/vmlinuz-${latest_kernel}"
+          kernel_path="/boot/vmlinuz-$(latest_kernel)"
 
           # Check if the kernel file exists
           if [[ -f "$kernel_path" ]]; then
-             sudo grubby --set-default "$kernel_path"
+             sudo kernel_path="$kernel_path" grubby --set-default "$(kernel_path)"
              sudo reboot
           else
              exit 1

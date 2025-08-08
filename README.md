@@ -1,54 +1,47 @@
-This project creates 3 servers.
+This project is similar to project1-ansible.The difference is it will create servers on AWS.
+Everything is automated.CloudFormation will create basic requirements for project.VPC,Subnets,RouteTables,NAT,Ec2,SecurityGroups.
+Ansible will set up 3 servers.Bastion server,Web server,Database server.
+
 Bastion server ( Ubuntu ) with reverse proxy that forwards connections to webserver.
-It has Nginx,Suricata,Fail2ban,AppArrmor,Firewall,Aide installed and set up.
+It has Nginx,Suricata,Fail2ban,AppArrmor,Firewall,Aide,Sysctl... installed and set up.
 
-Webserver ( RedHat ) has some basic web application set up which I found online (Its not working fully but it does the job).
-Application is hosted with httpd and connects to database.
+Web server ( RedHat 9 ) has some basic web application set up which I found online (Its not working fully but it does the j>
+Application is hosted with httpd and connects to database.SeLinux,Firewall,Httpd,Aide,Chrony... is also set up on the server
 
-Database ( RedHat ) server has mariadb set up with sakila database.
+Database server ( RedHat 9 ) has mariadb set up with sakila database
+It also has services set up like Chonry,SeLinux,Firewall,Aide...
 
-Connection is done with selfsigned certificates.Both webserver and database server have firewall,selinux and sysctl set up. 
-
-Step 1.
-It is assumed that you have 4 updated virtual machines with two interfaces.One with internet connection and one Internal Network
-One machine is controller on which you have ansible installed and set up
-Database virutal machine has to have storage device with minimum of 15G size
-Bastion server uses Ubuntu.Webserver and Database server use RedHat ( with subscription-manager set up ) 
-You have to have root access to these machines with ssh key 
+Storage role is commented out because VDO requires more ram than free tier instances provide.
+fatal: [ip-10-0-3-201.eu-north-1.compute.internal]: FAILED! => {"changed": false, "err": "  Not enough free memory for VDO target. 449.00 MiB RAM is required, but only 378.00 MiB RA>
+Password is not created for the user.You can change that by editing adduser-role
 
 Step 1.
-On controller machine set up python virtual environment with ansible-builder and ansible-navigator installed.
-Build an image using ansible-builder located in ansible-ee
-ansible-builder build --tag project1-env:1.0 --container-runtime docker -f execution-environment.yaml
-You will also have to change ansible-navigator.yaml to use container-engine specified and image name
+Python environment has to be set up with ansible-navigator and ansible-builder installed
+You have to have aws account.Also aws cli has to be installed on the system
+Generate session token,create and export aws profile.Modify the name of the profile you are using in ansible-navigator.yaml 
+aws sts get-session-token \
+  --serial-number arn:aws:iam::123456789012:mfa/name-of-device \
+  --token-code 123456
+
+Step 2.
+Execute aws CloudFormation stack using aws console or aws cli
+The region in which you created a stack has to be same as the region specified in inventory files
 
 Step 3.
-Open inventory/hosts file and change ip addresses with Internal Network addresses.
-Open plabooks/vars/main.yaml.You can modify ports,user names etc.
-Required changes in playbooks/vars/main.yaml are 
-db_device_path: "/dev/sdb"   -> name of the database storage device 
-bastion_pub_iface: "enp0s3"  -> bastion public interface
-bastion_priv_iface: "enp0s8" -> bastion private interface
-database_ip: '172.16.0.7'    ->
-webserver_ip: '172.16.0.3'   -> Your private network ip addresses
-bastion_ip: '172.16.0.2'     ->
+Create ansible-ee image with tag and container engine you are using ( docker,podman...)
+Change the name of image and container engine in ansible-navigator.yaml ( Dont forget to modify AWS section )
+Execute ansible-navigator run playbooks/main.yaml
+*********************************************************************************************
+For some reason mounting .aws to a container didnt work for me so I had to export credentials 
+*********************************************************************************************
 
 Step 4.
-Use ansible-navigator on cotroller node to execute playbooks/main.yaml ( you have to be in root of project dir )
-ansible-navigator run plabooks/main.yaml
+To clean up just delete the stack you created
 
-After ansible finishes you will only be able to log in to servers using user specified in playbook/vars/main.yaml with key ./project-key
-You will only be albe to access webserver and database through bastion server.Also website will only be available through bastion server
+After ansible finishes you will only be able to log in to servers using user and port specified in playbook/vars/main.yaml with key ./project-key
+You will only be albe to access webserver and database through bastion server.
+
 
 #Things to do:
 Sysctl
-Suricata
 Youtube
-
-
-README
-TASK [storage-role : Create Logical Volume] *********************************************************************************************
-fatal: [ip-10-0-3-201.eu-north-1.compute.internal]: FAILED! => {"changed": false, "err": "  Not enough free memory for VDO target. 449.00 MiB RAM is required, but only 378.00 MiB RAM is available.\n", "msg": "Creating logical volume 'database-vdo' failed", "rc": 5}
-
-
-ansible-ee
