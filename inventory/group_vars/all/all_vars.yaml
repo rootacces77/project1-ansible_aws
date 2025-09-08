@@ -1,4 +1,4 @@
 ansible_python_interpreter: /usr/bin/python3
 #ansible_user: root
 #ansible_port: 22
-ansible_private_key_file: ./aws-private.key
+ansible_private_key_file: ./aws-key.pem

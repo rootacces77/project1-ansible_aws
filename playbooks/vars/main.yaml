@@ -1,7 +1,7 @@
 #Overall vars: 
 user_name: "ansible"
 user_password: "{{root | password_hash('sha512' ) }}"
-user_public_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBhuCNqtfB/3G6kC6CYLuP1+7xQSQXnJ8oFeeLoLR0sO proj>
+user_public_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAxa3tIVrTjRnmXnrCDJxFQALixCp79bUTBqCP4gNB4E project1
 db_user: "ansible"
 db_password: "root"
 

@@ -1,5 +1,6 @@
 ansible_user: ec2-user
 #ansible_ssh_common_args: "-o ProxyJump=ubuntu@{{ hostvars[groups['_bastion'][0]]['public_ip_address'] }} -i aws-private.key"
-ansible_ssh_private_key_file: ./aws-private.key
 ansible_ssh_common_args: >-
-  -o ProxyCommand="ssh -i aws-private.key -W %h:%p ubuntu@{{ hostvars[groups['_bastion'][0]]['public_ip_address'] }}"
+  -o ProxyCommand="ssh -i aws-key.pem -o StrictHostKeyChecking=accept-new -W %h:%p ubuntu@{{ hostvars[groups['_bastion'][0]]['public_ip_address'] }}"
+  -o StrictHostKeyChecking=accept-new
+

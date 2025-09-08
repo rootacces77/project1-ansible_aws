@@ -1,6 +1,11 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: VPC with 3 subnets, 3 route tables, Internet Gateway, and NAT Gateway.
 
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Existing EC2 KeyPair name for SSH access
+
 Resources:
 
   # VPC
@@ -230,9 +235,9 @@ Resources:
   BastionServer:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-042b4708b1d05f512  # <-- Replace with latest Ubuntu AMI ID for your region
-      InstanceType: t3.micro           # <-- Or your desired instance type
-      KeyName: ansible-key
+      ImageId: ami-0360c520857e3138f  # <-- Replace with latest Ubuntu AMI ID for your region
+      InstanceType: t2.micro           # <-- Or your desired instance type
+      KeyName: !Ref KeyName
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           DeviceIndex: 0
@@ -255,9 +260,9 @@ Resources:
   WebServer:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-005019f47c98b4abd  # <-- Replace with latest Ubuntu AMI ID for your region
-      InstanceType: t3.micro           # <-- Or your desired instance type
-      KeyName: ansible-key              # <-- Replace with your existing key pair name
+      ImageId: ami-0dfc569a8686b9320  # <-- Replace with latest RedHat AMI ID for your region
+      InstanceType: t2.micro           # <-- Or your desired instance type
+      KeyName: !Ref KeyName              # <-- Replace with your existing key pair name
       SubnetId: !Ref WebserverSubnet  
       SecurityGroupIds:
         - !Ref WebserverSG        
@@ -269,18 +274,40 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          sudo subscription-manager register --org=19158669 --activationkey=ansible-projects 
-          sudo subscription-manager attach --auto
+          #sudo subscription-manager register --org=19158669 --activationkey=ansible-projects 
+          #sudo subscription-manager attach --auto
           sudo dnf update -y
+          # Get current running kernel
+          current_kernel=$(uname -r)
+
+          # Get the latest installed kernel version (numerically sorted)
+          latest_kernel=$(sudo rpm -q kernel | sort -V | tail -n 1 | sed 's/kernel-//')
+
+          # If current kernel is already the latest, skip
+          if [[ "$current_kernel" == "$latest_kernel" ]]; then
+             exit 0
+          fi
+
+          # Build the vmlinuz path
+          kernel_path="/boot/vmlinuz-$(latest_kernel)"
+
+          # Check if the kernel file exists
+          if [[ -f "$kernel_path" ]]; then
+             sudo kernel_path="$kernel_path" grubby --set-default "$(kernel_path)"
+             sudo reboot
+          else
+             exit 1
+          fi
+
       Monitoring: false # Optional: disables detailed monitoring (default)
 
 
   DatabaseServer:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-005019f47c98b4abd  # <-- Replace with latest Ubuntu AMI ID for your region
-      InstanceType: t3.micro           # <-- Or your desired instance type
-      KeyName: ansible-key              # <-- Replace with your existing key pair name
+      ImageId: ami-0dfc569a8686b9320  # <-- Replace with latest RedHat AMI ID for your region
+      InstanceType: t2.micro           # <-- Or your desired instance type
+      KeyName: !Ref KeyName              # <-- Replace with your existing key pair name
       SubnetId: !Ref DatabaseSubnet  # <-- Replace with your existing Subnet ID
       SecurityGroupIds:
         - !Ref DatabaseSG         # <-- Replace with your existing Security Group ID
