@@ -1,5 +1,4 @@
-This project is similar to project1-ansible.The difference is it will create servers on AWS.
-Everything is automated.CloudFormation will create basic requirements for project.Ansible will set up 3 servers.Bastion server,Web server,Database server with services :
+CloudFormation will create basic requirements for project.Ansible will set up 3 servers.Bastion server,Web server,Database server with services :
 - sshd
 - firewall
 - chrony
